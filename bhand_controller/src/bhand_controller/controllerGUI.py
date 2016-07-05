@@ -17,10 +17,10 @@ class BarrettController(QWidget):
 
         self.pub = rospy.Publisher("/bhand_node/command", sensor_msgs.msg.JointState, queue_size=10)
         self.msg = sensor_msgs.msg.JointState()
-        self.msg.name = ['bh_j11_joint', 'bh_j32_joint', 'bh_j12_joint', 'bh_j22_joint']
-        self.msg.position = [0.0 , 0.0, 0.0, 0.0]
-        self.msg.velocity = [0,0,0,0]
-        self.msg.effort = [0,0,0,0]
+        self.msg.name = ['bh_j11_joint', 'bh_j21_joint', 'bh_j32_joint', 'bh_j12_joint', 'bh_j22_joint']
+        self.msg.position = [0.0 , 0.0, 0.0, 0.0, 0.0]
+        self.msg.velocity = [0,0,0,0,0]
+        self.msg.effort = [0,0,0,0,0]
 
         self.initUI()
         
@@ -37,10 +37,10 @@ class BarrettController(QWidget):
         self.joint3_lineEdit = QLineEdit("0.0")
         self.joint4_lineEdit = QLineEdit("0.0")
 
-        self.joint1_lineEdit.setValidator(QDoubleValidator(0.0, 2.0, 2))
-        self.joint2_lineEdit.setValidator(QDoubleValidator(0.0, 2.0, 2))
-        self.joint3_lineEdit.setValidator(QDoubleValidator(0.0, 2.0, 2))
-        self.joint4_lineEdit.setValidator(QDoubleValidator(0.0, 2.0, 2))
+        self.joint1_lineEdit.setValidator(QDoubleValidator(0.0, 3.2, 2))
+        self.joint2_lineEdit.setValidator(QDoubleValidator(0.0, 2.5, 2))
+        self.joint3_lineEdit.setValidator(QDoubleValidator(0.0, 2.5, 2))
+        self.joint4_lineEdit.setValidator(QDoubleValidator(0.0, 2.5, 2))
 
         self.joint1_lineEdit.returnPressed.connect(commandButton.click)
         self.joint2_lineEdit.returnPressed.connect(commandButton.click)
@@ -61,12 +61,13 @@ class BarrettController(QWidget):
 
     def sendCommand(self):
         self.msg.position[0] = float(self.joint1_lineEdit.text())
-        self.msg.position[1] = float(self.joint2_lineEdit.text())
-        self.msg.position[2] = float(self.joint3_lineEdit.text())
-        self.msg.position[3] = float(self.joint4_lineEdit.text())
+        self.msg.position[1] = float(self.joint1_lineEdit.text())
+        self.msg.position[2] = float(self.joint2_lineEdit.text())
+        self.msg.position[3] = float(self.joint3_lineEdit.text())
+        self.msg.position[4] = float(self.joint4_lineEdit.text())
         self.pub.publish(self.msg)
         print "Sent Command:" 
-        print self.msg.position
+        print self.msg.position[1:5]
 
     def activateHand(self):
         try:
