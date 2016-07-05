@@ -34,11 +34,13 @@ class BarrettController(QWidget):
         
     def initUI(self):      
 
-        activateButton = QPushButton('Activate', self)
-        activateButton.clicked.connect(self.activateHand)
-
         commandButton = QPushButton('Send', self)
         commandButton.clicked.connect(self.sendCommand)
+
+        joint1_label = QLabel("Spread")
+        joint2_label = QLabel("Thumb")
+        joint3_label = QLabel("Finger 1")
+        joint4_label = QLabel("Finger 2")
         
         self.joint1_lineEdit = QLineEdit("0.0")
         self.joint2_lineEdit = QLineEdit("0.0")
@@ -60,18 +62,44 @@ class BarrettController(QWidget):
         self.joint3_display = QLCDNumber()
         self.joint4_display = QLCDNumber()
 
-        grid = QGridLayout()
-        grid.addWidget(activateButton, 0, 0)
-        grid.addWidget(self.joint1_lineEdit, 1, 0)
-        grid.addWidget(self.joint2_lineEdit, 2, 0)
-        grid.addWidget(self.joint3_lineEdit, 3, 0)
-        grid.addWidget(self.joint4_lineEdit, 4, 0)
-        grid.addWidget(commandButton, 5, 0)
+        activateButton = QPushButton('Activate', self)
+        activateButton.clicked.connect(lambda: self.callService(1))
 
-        grid.addWidget(self.joint1_display, 1, 1)
-        grid.addWidget(self.joint2_display, 2, 1)
-        grid.addWidget(self.joint3_display, 3, 1)
-        grid.addWidget(self.joint4_display, 4, 1)
+        close_button = QPushButton('Close Grasp', self)
+        close_button.clicked.connect(lambda: self.callService(2))
+
+        half_close_button = QPushButton('Half-close Grasp', self)
+        half_close_button.clicked.connect(lambda: self.callService(6))
+
+        open_button = QPushButton('Open Grasp', self)
+        open_button.clicked.connect(lambda: self.callService(3))
+
+        reset_button = QPushButton('Reset', self)
+        reset_button.clicked.connect(lambda: self.callService(4))
+
+        grid = QGridLayout()
+
+        grid.addWidget(joint1_label, 0, 0)
+        grid.addWidget(joint2_label, 1, 0)
+        grid.addWidget(joint3_label, 2, 0)
+        grid.addWidget(joint4_label, 3, 0)
+
+        grid.addWidget(self.joint1_lineEdit, 0, 1)
+        grid.addWidget(self.joint2_lineEdit, 1, 1)
+        grid.addWidget(self.joint3_lineEdit, 2, 1)
+        grid.addWidget(self.joint4_lineEdit, 3, 1)
+        grid.addWidget(commandButton, 4, 1)
+
+        grid.addWidget(self.joint1_display, 0, 2)
+        grid.addWidget(self.joint2_display, 1, 2)
+        grid.addWidget(self.joint3_display, 2, 2)
+        grid.addWidget(self.joint4_display, 3, 2)
+
+        grid.addWidget(activateButton, 0, 3)
+        grid.addWidget(close_button, 1, 3)
+        grid.addWidget(half_close_button, 2, 3)
+        grid.addWidget(open_button, 3, 3)
+        grid.addWidget(reset_button, 4, 3)
 
         self.setLayout(grid)
         
@@ -90,6 +118,14 @@ class BarrettController(QWidget):
         print self.msg.position[1:5]
 
 
+    def callService(self, action):
+        try:
+            service = rospy.ServiceProxy("/bhand_node/actions", Actions)
+            service(action)
+        except rospy.ServiceException, e:
+            print "Call to activation service failed: %s"%e
+
+
     def jointStateCallback(self, data):
 
         for i in range(len(data.name)):
@@ -100,15 +136,6 @@ class BarrettController(QWidget):
         self.joint2_display.display(self.joint_states['bh_j32_joint'])
         self.joint3_display.display(self.joint_states['bh_j12_joint'])
         self.joint4_display.display(self.joint_states['bh_j22_joint'])
-
-
-    def activateHand(self):
-
-        try:
-            activateService = rospy.ServiceProxy("/bhand_node/actions", Actions)
-            activateService(1)
-        except rospy.ServiceException, e:
-            print "Call to activation service failed: %s"%e
 
 
     def keyPressEvent(self, e):
