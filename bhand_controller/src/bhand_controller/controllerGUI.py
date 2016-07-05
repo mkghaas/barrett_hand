@@ -9,12 +9,19 @@ import rospy
 import sensor_msgs.msg
 
 from bhand_controller.srv import Actions
+from sensor_msgs.msg import JointState
 
 class BarrettController(QWidget):
     
     def __init__(self):
         super(BarrettController, self).__init__()
 
+        self.joint_states = {'bh_j21_joint': 0.0, 'bh_j32_joint': 0.0, 'bh_j12_joint': 0.0, 'bh_j22_joint': 0.0}
+
+        # set up ROS subscriber for real joint angles
+        self.sub = rospy.Subscriber('/joint_states', JointState, self.jointStateCallback)
+
+        # set up ROS publisher for desired joint angles
         self.pub = rospy.Publisher("/bhand_node/command", sensor_msgs.msg.JointState, queue_size=10)
         self.msg = sensor_msgs.msg.JointState()
         self.msg.name = ['bh_j11_joint', 'bh_j21_joint', 'bh_j32_joint', 'bh_j12_joint', 'bh_j22_joint']
@@ -23,6 +30,7 @@ class BarrettController(QWidget):
         self.msg.effort = [0,0,0,0,0]
 
         self.initUI()
+
         
     def initUI(self):      
 
@@ -47,19 +55,31 @@ class BarrettController(QWidget):
         self.joint3_lineEdit.returnPressed.connect(commandButton.click)
         self.joint4_lineEdit.returnPressed.connect(commandButton.click)
 
-        layout = QFormLayout()
-        layout.addRow(activateButton)
-        layout.addRow("Spread:", self.joint1_lineEdit)
-        layout.addRow("Thumb:", self.joint2_lineEdit)
-        layout.addRow("Finger 1:", self.joint3_lineEdit)
-        layout.addRow("Finger 2:", self.joint4_lineEdit)
-        layout.addRow(commandButton)
-        self.setLayout(layout)
+        self.joint1_display = QLCDNumber()
+        self.joint2_display = QLCDNumber()
+        self.joint3_display = QLCDNumber()
+        self.joint4_display = QLCDNumber()
+
+        grid = QGridLayout()
+        grid.addWidget(activateButton, 0, 0)
+        grid.addWidget(self.joint1_lineEdit, 1, 0)
+        grid.addWidget(self.joint2_lineEdit, 2, 0)
+        grid.addWidget(self.joint3_lineEdit, 3, 0)
+        grid.addWidget(self.joint4_lineEdit, 4, 0)
+        grid.addWidget(commandButton, 5, 0)
+
+        grid.addWidget(self.joint1_display, 1, 1)
+        grid.addWidget(self.joint2_display, 2, 1)
+        grid.addWidget(self.joint3_display, 3, 1)
+        grid.addWidget(self.joint4_display, 4, 1)
+
+        self.setLayout(grid)
         
         self.setWindowTitle('Barrett control')
         self.show()
 
     def sendCommand(self):
+
         self.msg.position[0] = float(self.joint1_lineEdit.text())
         self.msg.position[1] = float(self.joint1_lineEdit.text())
         self.msg.position[2] = float(self.joint2_lineEdit.text())
@@ -69,12 +89,27 @@ class BarrettController(QWidget):
         print "Sent Command:" 
         print self.msg.position[1:5]
 
+
+    def jointStateCallback(self, data):
+
+        for i in range(len(data.name)):
+            if self.joint_states.has_key(data.name[i]):
+                self.joint_states[data.name[i]] = data.position[i]
+
+        self.joint1_display.display(self.joint_states['bh_j21_joint'])
+        self.joint2_display.display(self.joint_states['bh_j32_joint'])
+        self.joint3_display.display(self.joint_states['bh_j12_joint'])
+        self.joint4_display.display(self.joint_states['bh_j22_joint'])
+
+
     def activateHand(self):
+
         try:
             activateService = rospy.ServiceProxy("/bhand_node/actions", Actions)
             activateService(1)
         except rospy.ServiceException, e:
             print "Call to activation service failed: %s"%e
+
 
     def keyPressEvent(self, e):
 
