@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import time
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
@@ -43,7 +44,6 @@ class BarrettController(QWidget):
         grid.setColumnMinimumWidth(5, 25)
 
         self.setLayout(grid)
-        
         self.setWindowTitle('Barrett control')
         self.show()
 
@@ -53,59 +53,36 @@ class BarrettController(QWidget):
         commandButton = QPushButton('Send', self)
         commandButton.clicked.connect(self.sendPositionCommand)
 
-        joint1_label = QLabel("Spread")
-        joint2_label = QLabel("Finger 1")
-        joint3_label = QLabel("Finger 2")
-        joint4_label = QLabel("Thumb")
-        
-        self.joint1_lineEdit = QLineEdit("0.0")
-        self.joint2_lineEdit = QLineEdit("0.0")
-        self.joint3_lineEdit = QLineEdit("0.0")
-        self.joint4_lineEdit = QLineEdit("0.0")
+        labels = [QLabel("Spread"), 
+                  QLabel("Finger 1"),
+                  QLabel("Finger 2"),
+                  QLabel("Thumb")]
+        self.jointPosInput = []
+        self.jointPosDisplays = []
 
-        self.joint1_lineEdit.setValidator(QDoubleValidator(0.0, 3.2, 2))
-        self.joint2_lineEdit.setValidator(QDoubleValidator(0.0, 2.5, 2))
-        self.joint3_lineEdit.setValidator(QDoubleValidator(0.0, 2.5, 2))
-        self.joint4_lineEdit.setValidator(QDoubleValidator(0.0, 2.5, 2))
+        for i in range(4):
+            self.jointPosInput.append( QLineEdit("0.0") )
+            self.jointPosInput[i].setValidator(QDoubleValidator(0.0, 3.14, 2))
+            self.jointPosInput[i].returnPressed.connect(commandButton.click)
+            self.jointPosDisplays.append( QLCDNumber() )
+            grid.addWidget(labels[i], i, 0)
+            grid.addWidget(self.jointPosInput[i], i, 1)
+            grid.addWidget(self.jointPosDisplays[i], i, 2)
 
-        self.joint1_lineEdit.returnPressed.connect(commandButton.click)
-        self.joint2_lineEdit.returnPressed.connect(commandButton.click)
-        self.joint3_lineEdit.returnPressed.connect(commandButton.click)
-        self.joint4_lineEdit.returnPressed.connect(commandButton.click)
-
-        self.joint1_display = QLCDNumber()
-        self.joint2_display = QLCDNumber()
-        self.joint3_display = QLCDNumber()
-        self.joint4_display = QLCDNumber()
-
-        grid.addWidget(joint1_label, 0, 0)
-        grid.addWidget(joint2_label, 1, 0)
-        grid.addWidget(joint3_label, 2, 0)
-        grid.addWidget(joint4_label, 3, 0)
-
-        grid.addWidget(self.joint1_lineEdit, 0, 1)
-        grid.addWidget(self.joint2_lineEdit, 1, 1)
-        grid.addWidget(self.joint3_lineEdit, 2, 1)
-        grid.addWidget(self.joint4_lineEdit, 3, 1)
         grid.addWidget(commandButton, 4, 1)
-
-        grid.addWidget(self.joint1_display, 0, 2)
-        grid.addWidget(self.joint2_display, 1, 2)
-        grid.addWidget(self.joint3_display, 2, 2)
-        grid.addWidget(self.joint4_display, 3, 2)
 
 
     def close_fingers_UI(self, grid):
 
-        preloadButton = QPushButton('Close', self)
-        preloadButton.clicked.connect(self.sendVelocityCommand)
+        close_finger_button = QPushButton('Close', self)
+        close_finger_button.clicked.connect(self.sendVelocityCommand)
 
         self.checkboxes = []
         for i in range(4):
             self.checkboxes.append(QCheckBox())
             grid.addWidget(self.checkboxes[i], i, 4, Qt.AlignCenter)
 
-        grid.addWidget(preloadButton, 4, 4)
+        grid.addWidget(close_finger_button, 4, 4)
 
 
     def predefined_grasps_UI(self, grid):
@@ -136,11 +113,11 @@ class BarrettController(QWidget):
 
         self.callModeServive("POSITION")
 
-        self.msg.position[0] = float(self.joint1_lineEdit.text())
-        self.msg.position[1] = float(self.joint1_lineEdit.text())
-        self.msg.position[2] = float(self.joint2_lineEdit.text())
-        self.msg.position[3] = float(self.joint3_lineEdit.text())
-        self.msg.position[4] = float(self.joint4_lineEdit.text())
+        self.msg.position[0] = float(self.jointPosInput[0].text())
+        self.msg.position[1] = float(self.jointPosInput[0].text())
+        self.msg.position[2] = float(self.jointPosInput[1].text())
+        self.msg.position[3] = float(self.jointPosInput[2].text())
+        self.msg.position[4] = float(self.jointPosInput[3].text())
         self.pub.publish(self.msg)
         print "Sent position command:" 
         print self.msg.position[1:5]
@@ -149,14 +126,15 @@ class BarrettController(QWidget):
     def sendVelocityCommand(self):
 
         self.callModeServive("VELOCITY")
-        if self.checkboxes[0].isChecked:
-            self.msg.velocity[0] = 1.0
+
+        if self.checkboxes[0].isChecked():
+            self.msg.velocity[0] = 0.1
         else:
             self.msg.velocity[0] = 0.0
 
         for i in range(4):
             if self.checkboxes[i].isChecked():
-                self.msg.velocity[i+1] = 1.0
+                self.msg.velocity[i+1] = 0.1
             else:
                 self.msg.velocity[i+1] = 0.0
 
@@ -189,10 +167,10 @@ class BarrettController(QWidget):
             if self.joint_states.has_key(data.name[i]):
                 self.joint_states[data.name[i]] = data.position[i]
 
-        self.joint1_display.display(self.joint_states['bh_j21_joint'])
-        self.joint2_display.display(self.joint_states['bh_j22_joint'])
-        self.joint3_display.display(self.joint_states['bh_j12_joint'])
-        self.joint4_display.display(self.joint_states['bh_j32_joint'])
+        self.jointPosDisplays[0].display(self.joint_states['bh_j21_joint'])
+        self.jointPosDisplays[1].display(self.joint_states['bh_j22_joint'])
+        self.jointPosDisplays[2].display(self.joint_states['bh_j12_joint'])
+        self.jointPosDisplays[3].display(self.joint_states['bh_j32_joint'])
 
 
     def keyPressEvent(self, e):
