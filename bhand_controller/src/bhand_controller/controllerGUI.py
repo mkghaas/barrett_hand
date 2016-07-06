@@ -18,7 +18,10 @@ class BarrettController(QWidget):
     def __init__(self):
         super(BarrettController, self).__init__()
 
-        self.joint_states = {'bh_j21_joint': 0.0, 'bh_j12_joint': 0.0, 'bh_j22_joint': 0.0, 'bh_j32_joint': 0.0}
+        self.joint_states = {'bh_j21_joint': 0.0, # Spread
+                             'bh_j12_joint': 0.0, # Finger 1
+                             'bh_j22_joint': 0.0, # Finger 2
+                             'bh_j32_joint': 0.0} # Thumb
 
         # set up ROS subscriber for real joint angles
         self.sub = rospy.Subscriber('/joint_states', JointState, self.jointStateCallback)
@@ -26,7 +29,11 @@ class BarrettController(QWidget):
         # set up ROS publisher for desired joint angles
         self.pub = rospy.Publisher("/bhand_node/command", sensor_msgs.msg.JointState, queue_size=10)
         self.msg = sensor_msgs.msg.JointState()
-        self.msg.name = ['bh_j11_joint', 'bh_j21_joint', 'bh_j12_joint', 'bh_j22_joint', 'bh_j32_joint']
+        self.msg.name = ['bh_j11_joint',    # Spread 1
+                         'bh_j21_joint',    # Spread 2
+                         'bh_j12_joint',    # Finger 1
+                         'bh_j22_joint',    # Finger 2
+                         'bh_j32_joint']    # Thumb
         self.msg.position = [0.0 , 0.0, 0.0, 0.0, 0.0]
         self.msg.velocity = [0.0 , 0.0, 0.0, 0.0, 0.0]
         self.msg.effort = [0.0 , 0.0, 0.0, 0.0, 0.0]
@@ -68,7 +75,6 @@ class BarrettController(QWidget):
             grid.addWidget(labels[i], i, 0)
             grid.addWidget(self.jointPosInput[i], i, 1)
             grid.addWidget(self.jointPosDisplays[i], i, 2)
-
         grid.addWidget(commandButton, 4, 1)
 
 
@@ -81,7 +87,6 @@ class BarrettController(QWidget):
         for i in range(4):
             self.checkboxes.append(QCheckBox())
             grid.addWidget(self.checkboxes[i], i, 4, Qt.AlignCenter)
-
         grid.addWidget(close_finger_button, 4, 4)
 
 
@@ -113,6 +118,7 @@ class BarrettController(QWidget):
 
         self.callModeServive("POSITION")
 
+        # desired joint position has to be set for both SPREAD1 and SPREAD2
         self.msg.position[0] = float(self.jointPosInput[0].text())
         self.msg.position[1] = float(self.jointPosInput[0].text())
         self.msg.position[2] = float(self.jointPosInput[1].text())
@@ -127,6 +133,7 @@ class BarrettController(QWidget):
 
         self.callModeServive("VELOCITY")
 
+        # desired velocity has to be set for both SPREAD1 and SPREAD2
         if self.checkboxes[0].isChecked():
             self.msg.velocity[0] = 0.1
         else:
