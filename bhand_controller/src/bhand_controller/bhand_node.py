@@ -49,7 +49,7 @@ MAX_FREQ = 250.0
 CONTROL_MODE_POSITION = "POSITION"
 CONTROL_MODE_VELOCITY = "VELOCITY"
 
-WATCHDOG_VELOCITY = 10.0	# Max time (seconds) between velocity commands before stopping the velocity
+WATCHDOG_VELOCITY = 0.1	# Max time (seconds) between velocity commands before stopping the velocity
 
 # class to save the info of each joint
 class JointHand:

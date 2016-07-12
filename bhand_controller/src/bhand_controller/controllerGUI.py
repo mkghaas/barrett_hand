@@ -81,6 +81,8 @@ class BarrettController(QWidget):
     def close_fingers_UI(self, grid):
 
         close_finger_button = QPushButton('Close', self)
+        close_finger_button.setAutoRepeat(True)
+        close_finger_button.setAutoRepeatDelay(0.05)
         close_finger_button.clicked.connect(self.sendVelocityCommand)
 
         self.checkboxes = []
@@ -175,8 +177,8 @@ class BarrettController(QWidget):
                 self.joint_states[data.name[i]] = data.position[i]
 
         self.jointPosDisplays[0].display(self.joint_states['bh_j21_joint'])
-        self.jointPosDisplays[1].display(self.joint_states['bh_j22_joint'])
-        self.jointPosDisplays[2].display(self.joint_states['bh_j12_joint'])
+        self.jointPosDisplays[1].display(self.joint_states['bh_j12_joint'])
+        self.jointPosDisplays[2].display(self.joint_states['bh_j22_joint'])
         self.jointPosDisplays[3].display(self.joint_states['bh_j32_joint'])
 
 
